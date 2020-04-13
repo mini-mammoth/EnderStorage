@@ -7,161 +7,132 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
     }
 }
 
-//add dependency repositories
-repositories {
-	maven {
-		name = "CB Repo"
-		url = "http://chickenbones.net/maven"
-	}
-	maven {
-		name = "JEI Maven"
-		url = "http://dvs1.progwml6.com/files/maven"
-	}
+//plugins {
+//	id "com.matthewprenger.cursegradle" version "1.0.7"
+//}
+
+apply plugin: 'idea'
+apply plugin: "net.minecraftforge.gradle"
+
+version = modversion
+group= "com.setycz.chickens"
+archivesBaseName = "chickens"
+
+sourceCompatibility = targetCompatibility = "1.8"
+compileJava {
+    sourceCompatibility = targetCompatibility = "1.8"
 }
 
-apply plugin: 'net.minecraftforge.gradle.forge'
-apply plugin: 'maven'
+configurations {
+    mod
+}
 
-group = "codechicken" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "EnderStorage"
+minecraft {
+    // the mappings can be changed at any time, and must be in the following format.
+    // snapshot_YYYYMMDD   snapshot are built nightly.
+    // stable_#            stables are built at the discretion of the MCP team.
+    // Use non-default mappings at your own risk. they may not allways work.
+    // simply re-run your setup task after changing the mappings to update your workspace.
+//    mappings channel: 'stable', version: "60-1.15"
+    mappings channel: 'snapshot', version: "20200318-1.15.1"
 
-targetCompatibility = "1.8"
-sourceCompatibility = "1.8"
+    runs {
+        client {
+            workingDirectory project.file('run').canonicalPath
 
-// Define properties file
-ext.configFile = file "build.properties"
+            // recommended logging data for a userdev environment
+            properties 'forge.logging.markers': 'SCAN,REGISTRIES,REGISTRYDUMP'
+            // recommended logging level for the console
+            properties 'forge.logging.console.level': 'debug'
 
-configFile.withReader {
-    // Load config.  It shall from now be referenced as simply config or project.config
-    def prop = new Properties()
-    prop.load(it)
-    project.ext.config = new ConfigSlurper().parse prop
+            source sourceSets.main
+        }
+
+        server  {
+            workingDirectory project.file('run').canonicalPath
+
+            // recommended logging data for a userdev environment
+            properties 'forge.logging.markers': 'SCAN,REGISTRIES,REGISTRYDUMP'
+            // recommended logging level for the console
+            properties 'forge.logging.console.level': 'debug'
+
+            source sourceSets.main
+        }
+
+        data  {
+            workingDirectory project.file('run').canonicalPath
+
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+            args '--mod', 'theoneprobe', '--all', '--output', file('src/generated/resources/'), '--existing', sourceSets.main.resources.srcDirs[0]
+
+            source sourceSets.main
+        }
+    }
+
+//    replace '@VERSION@', project.version
+//    replace '@FORGEVERSION@', forgeversion
+}
+
+repositories {
+    mavenCentral()
+    maven { url "http://tehnut.info/maven" }
+    maven { url = "http://chickenbones.net/maven/" }
+
+    maven { url "http://dvs1.progwml6.com/files/maven" }
+    // Fallback for JEI
+    maven { url "https://modmaven.k-4u.nl" }
+    maven { // TOP
+        name 'tterrag maven'
+        url "http://maven.tterrag.com/"
+    }
+    maven {
+        name = "CoFH Maven"
+        url = "http://maven.covers1624.net"
+    }
 }
 
 dependencies {
-    compile "codechicken:CodeChickenLib:${config.mc_version}-${config.ccl_version}:deobf"
-	compile "mezz.jei:jei_${config.mc_version}:${config.jei_version}"
+    // Specify the version of Minecraft to use, If this is any group other then 'net.minecraft' it is assumed
+    // that the dep is a ForgeGradle 'patcher' dependency. And it's patches will be applied.
+    // The userdev artifact is a special name and will get all sorts of transformations applied to it.
+    minecraft "net.minecraftforge:forge:${mcversion}-${forgeversion}"
+
+    compile "codechicken:CodeChickenLib:1.12.2-${ccl_version}:deobf"
+    compileOnly fg.deobf("mezz.jei:jei-${mcversion}:${jei_version}:api")
+    runtimeOnly fg.deobf("mezz.jei:jei-${mcversion}:${jei_version}")
 }
 
-version =  "${project.config.mod_version}." + System.getenv("BUILD_NUMBER") ?: "1"
+//processResources
+//        {
+//            inputs.property "version", project.version
+//            inputs.property "mcversion", project.minecraft.version
+//
+//            from(sourceSets.main.resources.srcDirs) {
+//                include 'mcmod.info'
+//
+//                expand 'version': project.version, 'mcversion': project.minecraft.version
+//            }
+//
+//            from(sourceSets.main.resources.srcDirs) {
+//                exclude 'mcmod.info'
+//            }
+//        }
 
-println  config.mc_version + "-" + config.forge_version
-// Setup the forge minecraft plugin data. Specify the preferred forge/minecraft version here
-minecraft {
-    version = config.mc_version + "-" + config.forge_version
-    mappings = config.mappings
-	makeObfSourceJar = false
-    replace '${mod_version}', project.config.mod_version
-	runDir = "run"
-}
-
-processResources {
-    // Redo task if any of these properties change
-    inputs.property "version", project.version
-    inputs.property "mc_version", config.mc_version
-
-    // Replace properties in info files
-    from(sourceSets.main.resources.srcDirs) {
-        include '*.info'
-        expand 'version':project.version,'mc_version':config.mc_version
-    }
-
-	// Move access transformer to META-INF
-	rename '(.+_at.cfg)', 'META-INF/$1'
-}
-
-version = "${project.minecraft.version}-${project.version}"
-def commonManifest = {
-    attributes 'FMLAT': 'es_at.cfg'
-}
-
-jar {
-    classifier = 'universal'
-    manifest commonManifest
-}
-
-task srcJar(type: Jar) {
-    from sourceSets.main.java
-    classifier = 'sources'
-}
-
-task deobfJar(type: Jar) {
-    from sourceSets.main.output
-    classifier = 'deobf'
-    manifest commonManifest
-}
-
-task signJar(type: SignJar, dependsOn: reobfJar) {
-    onlyIf { // Skip the task if our secret data isn't available
-        project.hasProperty('keyStore')
-    }
-
-    if (project.hasProperty('keyStore')) {
-        keyStore = project.keyStore // This needs to be a path to the keystore file
-        alias = project.keyStoreAlias
-        storePass = project.keyStorePass
-        keyPass = project.keyStoreKeyPass
-        inputFile = jar.archivePath
-        outputFile = jar.archivePath
-    }
-}
-
-build.dependsOn signJar
-
-// Tell the artifact system about our extra jars
-artifacts {
-    archives srcJar, deobfJar
-}
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            if (project.hasProperty("local_maven")) {
-                repository(url: "file://${local_maven}")
-                pom {
-                    groupId = project.group
-                    version = project.version
-                    artifactId = project.archivesBaseName
-                    project {
-                        name project.archivesBaseName
-                        packaging 'jar'
-                        description 'EnderStorage'
-                        url 'https://github.com/TheCBProject/EnderStorage'
-                        scm {
-                            url 'https://github.com/TheCBProject/EnderStorage'
-                            connection 'scm:git:git@github.com:TheCBProject/EnderStorage.git'
-                            developerConnection 'scm:git:git@github.com:TheCBProject/EnderStorage.git'
-                        }
-                        issueManagement {
-                            system 'github'
-                            url 'https://github.com/TheCBProject/EnderStorage/issues'
-                        }
-                        licenses {
-                            license {
-                                name 'License'
-                                url 'https://raw.githubusercontent.com/TheCBProject/EnderStorage/master/LICENSE.txt'
-                                distribution 'repo'
-                            }
-                        }
-                        developers {
-                            developer {
-                                id 'chicken-bones'
-                                name 'chicken-bones'
-                                roles { role 'developer' }
-                            }
-                            developer {
-                                id 'covers1624'
-                                name 'covers1624'
-                                roles { role 'developer' }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+//curseforge {
+//    apiKey = project.hasProperty('curse_token') ? project.getProperty('curse_token') : ''
+//    project {
+//        id = project.hasProperty('curse_project_id') ? project.getProperty('curse_project_id') : ''
+//        changelog = file('changelog.txt')
+//        releaseType = project.releaseType
+//        addGameVersion "${mcversion}"
+//        relations {
+//            optionalLibrary 'hwyla'
+//            optionalLibrary 'just-enough-items-jei'
+//        }
+//    }
+//}

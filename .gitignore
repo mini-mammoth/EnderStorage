@@ -5,13 +5,9 @@
 
 # Include important folders
 
-# Gradle stuff
-!gradle/
-!gradlew
-!gradlew.bat
-!build.gradle
-!build.properties
-!settings.gradle
+# gradle
+build
+.gradle
 
 # Other Files.
 !LICENSE.txt
