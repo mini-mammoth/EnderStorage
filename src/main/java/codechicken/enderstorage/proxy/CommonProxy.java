@@ -9,18 +9,16 @@ import codechicken.enderstorage.plugin.EnderItemStoragePlugin;
 import codechicken.enderstorage.plugin.EnderLiquidStoragePlugin;
 import codechicken.lib.packet.PacketCustom;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 
-/**
- * Created by covers1624 on 4/11/2016.
- */
-public class Proxy {
+public class CommonProxy {
 
     public void preInit() {
         EnderStorageManager.registerPlugin(new EnderItemStoragePlugin());
         EnderStorageManager.registerPlugin(new EnderLiquidStoragePlugin());
         ModBlocks.init();
         ModItems.init();
-        //MinecraftForge.EVENT_BUS.register(EnderStorageRecipe.init());
         MinecraftForge.EVENT_BUS.register(new EnderStorageManager.EnderStorageSaveHandler());
         MinecraftForge.EVENT_BUS.register(new TankSynchroniser());
     }
@@ -29,4 +27,8 @@ public class Proxy {
         PacketCustom.assignHandler(EnderStorageSPH.channel, new EnderStorageSPH());
     }
 
+    @SubscribeEvent
+    public void preServerStart(FMLServerStartedEvent event) {
+        EnderStorageManager.reloadManager(false);
+    }
 }

@@ -21,7 +21,7 @@ import net.minecraftforge.fml.client.registry.ClientRegistry;
 /**
  * Created by covers1624 on 4/11/2016.
  */
-public class ProxyClient extends Proxy {
+public class ClientProxy extends CommonProxy {
 
     @Override
     public void preInit() {

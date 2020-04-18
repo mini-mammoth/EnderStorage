@@ -1,12 +1,12 @@
 package codechicken.enderstorage.api;
 
+import codechicken.enderstorage.lib.ItemNBTUtils;
+import codechicken.enderstorage.lib.MCDataInput;
+import codechicken.enderstorage.lib.MCDataOutput;
 import codechicken.lib.colour.EnumColour;
-import codechicken.lib.data.MCDataInput;
-import codechicken.lib.data.MCDataOutput;
 import codechicken.lib.util.Copyable;
-import codechicken.lib.util.ItemNBTUtils;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundNBT;
 
 /**
  * Created by covers1624 on 4/26/2016.
@@ -33,7 +33,7 @@ public final class Frequency implements Copyable<Frequency> {
         this.owner = owner;
     }
 
-    public Frequency(NBTTagCompound tagCompound) {
+    public Frequency(CompoundNBT tagCompound) {
         read_internal(tagCompound);
     }
 
@@ -118,33 +118,33 @@ public final class Frequency implements Copyable<Frequency> {
         return new EnumColour[] { left, middle, right };
     }
 
-    protected Frequency read_internal(NBTTagCompound tagCompound) {
-        left = EnumColour.fromWoolMeta(tagCompound.getInteger("left"));
-        middle = EnumColour.fromWoolMeta(tagCompound.getInteger("middle"));
-        right = EnumColour.fromWoolMeta(tagCompound.getInteger("right"));
-        if (tagCompound.hasKey("owner")) {
+    protected Frequency read_internal(CompoundNBT tagCompound) {
+        left = EnumColour.fromWoolMeta(tagCompound.getInt("left"));
+        middle = EnumColour.fromWoolMeta(tagCompound.getInt("middle"));
+        right = EnumColour.fromWoolMeta(tagCompound.getInt("right"));
+        if (tagCompound.contains("owner")) {
             owner = tagCompound.getString("owner");
         }
         return this;
     }
 
-    protected NBTTagCompound write_internal(NBTTagCompound tagCompound) {
-        tagCompound.setInteger("left", left.getWoolMeta());
-        tagCompound.setInteger("middle", middle.getWoolMeta());
-        tagCompound.setInteger("right", right.getWoolMeta());
+    protected CompoundNBT write_internal(CompoundNBT tagCompound) {
+        tagCompound.putInt("left", left.getWoolMeta());
+        tagCompound.putInt("middle", middle.getWoolMeta());
+        tagCompound.putInt("right", right.getWoolMeta());
         if (owner != null) {
-            tagCompound.setString("owner", owner);
+            tagCompound.putString("owner", owner);
         }
         return tagCompound;
     }
 
-    public NBTTagCompound writeToNBT(NBTTagCompound tagCompound) {
+    public CompoundNBT writeToNBT(CompoundNBT tagCompound) {
         write_internal(tagCompound);
         return tagCompound;
     }
 
     public void writeToPacket(MCDataOutput packet) {
-        packet.writeNBTTagCompound(write_internal(new NBTTagCompound()));
+        packet.writeNBTTagCompound(write_internal(new CompoundNBT()));
     }
 
     public static Frequency readFromPacket(MCDataInput packet) {
@@ -152,18 +152,18 @@ public final class Frequency implements Copyable<Frequency> {
     }
 
     public static Frequency readFromStack(ItemStack stack) {
-        if (stack.hasTagCompound()) {
-            NBTTagCompound stackTag = stack.getTagCompound();
-            if (stackTag.hasKey("Frequency")) {
-                return new Frequency(stackTag.getCompoundTag("Frequency"));
+        if (stack.hasTag()) {
+            CompoundNBT stackTag = stack.getTag();
+            if (stackTag.contains("Frequency")) {
+                return new Frequency(stackTag.getCompound("Frequency"));
             }
         }
         return new Frequency();
     }
 
     public ItemStack writeToStack(ItemStack stack) {
-        NBTTagCompound tagCompound = ItemNBTUtils.validateTagExists(stack);
-        tagCompound.setTag("Frequency", write_internal(new NBTTagCompound()));
+        CompoundNBT tagCompound = ItemNBTUtils.validateTagExists(stack);
+        tagCompound.put("Frequency", write_internal(new CompoundNBT()));
         return stack;
     }
 
@@ -190,7 +190,8 @@ public final class Frequency implements Copyable<Frequency> {
     }
 
     @Override
-    public Frequency copy() {
+    public Frequency copy()
+    {
         return new Frequency(this.left, this.middle, this.right, this.owner);
     }
 }
